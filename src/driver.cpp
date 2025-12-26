@@ -15,11 +15,19 @@
 #include "hook/hook_impl_params.h"
 #include <adrenotools/driver.h>
 #include <unistd.h>
+#include <cstring>
+
+#define TAG "adrenotools"
+#define LOGI(fmt, ...) __android_log_print(ANDROID_LOG_INFO, TAG, fmt, ##__VA_ARGS__)
+#define LOGW(fmt, ...) __android_log_print(ANDROID_LOG_WARN, TAG, fmt, ##__VA_ARGS__)
+#define LOGE(fmt, ...) __android_log_print(ANDROID_LOG_ERROR, TAG, fmt, ##__VA_ARGS__)
 
 void *adrenotools_open_libvulkan(int dlopenFlags, int featureFlags, const char *tmpLibDir, const char *hookLibDir, const char *customDriverDir, const char *customDriverName, const char *fileRedirectDir, void **userMappingHandle) {
     // Bail out if linkernsbypass failed to load, this probably means we're on api < 28
-    if (!linkernsbypass_load_status())
+    if (!linkernsbypass_load_status()) {
+        LOGE("adrenotools_open_libvulkan: linkernsbypass_load_status() failed");
         return nullptr;
+    }
 
     // Always use memfd on Q+ since it's guaranteed to work
     if (android_get_device_api_level() >= 29)
@@ -207,4 +215,23 @@ void adrenotools_set_turbo(bool turbo) {
 
     ioctl(kgslFd, IOCTL_KGSL_SETPROPERTY, &prop);
     close (kgslFd);
+}
+
+bool adrenotools_set_freedreno_env(const char *varName, const char *value) {
+    if (!varName || !value || std::strlen(varName) == 0)
+        return false;
+
+    int result = setenv(varName, value, 1);
+    if (result != 0) {
+        LOGE("adrenotools_set_freedreno_env: Failed to set '%s' (errno: %d)", varName, errno);
+        return false;
+    }
+
+    const char *verifyValue = std::getenv(varName);
+    if (verifyValue && std::strcmp(verifyValue, value) == 0) {
+        return true;
+    } else {
+        LOGE("adrenotools_set_freedreno_env: Verification failed for '%s'", varName);
+        return false;
+    }
 }

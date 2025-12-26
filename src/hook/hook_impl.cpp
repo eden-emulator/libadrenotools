@@ -14,6 +14,8 @@
 
 #define TAG "hook_impl"
 #define LOGI(fmt, ...) __android_log_print(ANDROID_LOG_INFO, TAG, fmt, ##__VA_ARGS__)
+#define LOGW(fmt, ...) __android_log_print(ANDROID_LOG_WARN, TAG, fmt, ##__VA_ARGS__)
+#define LOGE(fmt, ...) __android_log_print(ANDROID_LOG_ERROR, TAG, fmt, ##__VA_ARGS__)
 
 const HookImplParams *hook_params; //!< Bunch of info needed to load/patch the driver
 int (*gsl_memory_alloc_pure_sym)(uint32_t, uint32_t, void *);
@@ -27,6 +29,11 @@ using gsl_memory_free_pure_t = decltype(gsl_memory_free_pure_sym);
 
 __attribute__((visibility("default"))) void init_hook_param(const void *param) {
     hook_params = reinterpret_cast<const HookImplParams *>(param);
+
+    if (!hook_params) {
+        LOGE("init_hook_param: Received NULL hook_params!");
+        return;
+    }
 }
 
 __attribute__((visibility("default"))) void init_gsl(void *alloc, void *alloc64, void *free) {
