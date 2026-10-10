@@ -16,6 +16,7 @@
 #include <adrenotools/driver.h>
 #include <unistd.h>
 #include <cstring>
+#include <cstdlib>
 
 #define TAG "adrenotools"
 #define LOGI(fmt, ...) __android_log_print(ANDROID_LOG_INFO, TAG, fmt, ##__VA_ARGS__)
